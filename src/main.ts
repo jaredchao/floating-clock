@@ -1,4 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { startClock } from "./clock";
 
 async function setupDragging() {
   const appWindow = getCurrentWindow();
@@ -11,8 +12,18 @@ async function setupDragging() {
   });
 }
 
+function initClock() {
+  const clockEl = document.getElementById("clock")!;
+  const stopClock = startClock((timeStr) => {
+    clockEl.textContent = timeStr;
+  });
+
+  return stopClock;
+}
+
 function init() {
   setupDragging();
+  initClock();
   console.log("悬浮时钟已启动");
 }
 
