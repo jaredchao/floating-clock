@@ -27,6 +27,23 @@
         </div>
         <button id="add-alarm-btn" class="add-btn">+ 添加闹钟</button>
       </div>
+
+      <div id="settings-panel" class="settings-panel hidden">
+        <div class="settings-header">
+          <span>设置</span>
+          <button id="close-settings" class="icon-btn">×</button>
+        </div>
+        <div class="settings-list">
+          <div class="settings-item">
+            <span>24小时制</span>
+            <button id="toggle-24h" class="toggle-btn active"></button>
+          </div>
+          <div class="settings-item">
+            <span>开机自启</span>
+            <button id="toggle-autostart" class="toggle-btn"></button>
+          </div>
+        </div>
+      </div>
     </div>
     <script type="module" src="./main.ts"></script>
   </body>

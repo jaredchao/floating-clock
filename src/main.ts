@@ -8,8 +8,10 @@ import {
   toggleAlarm,
   formatAlarmTime,
 } from "./alarm";
+import { getSettings, saveSettings, type ClockSettings } from "./settings";
 
 let isAlarmPanelOpen = false;
+let currentSettings: ClockSettings = { is24Hour: true, autoStart: false };
 
 async function setupDragging() {
   const appWindow = getCurrentWindow();
@@ -17,7 +19,7 @@ async function setupDragging() {
 
   appEl.addEventListener("mousedown", async (e) => {
     const target = e.target as HTMLElement;
-    if (e.button === 0 && !target.closest("#alarm-panel") && !isAlarmPanelOpen) {
+    if (e.button === 0 && !target.closest("#alarm-panel") && !isAlarmPanelOpen && !target.closest("#settings-panel")) {
       await appWindow.startDragging();
     }
   });
@@ -193,10 +195,53 @@ function initAlarmTrigger() {
   });
 }
 
+async function initSettings() {
+  currentSettings = await getSettings();
+
+  const toggle24h = document.getElementById("toggle-24h")!;
+  const toggleAutostart = document.getElementById("toggle-autostart")!;
+
+  toggle24h.classList.toggle("active", currentSettings.is24Hour);
+  toggleAutostart.classList.toggle("active", currentSettings.autoStart);
+
+  toggle24h.addEventListener("click", async () => {
+    currentSettings.is24Hour = !currentSettings.is24Hour;
+    toggle24h.classList.toggle("active", currentSettings.is24Hour);
+    await saveSettings(currentSettings);
+    window.dispatchEvent(new Event("settings-changed"));
+  });
+
+  toggleAutostart.addEventListener("click", async () => {
+    currentSettings.autoStart = !currentSettings.autoStart;
+    toggleAutostart.classList.toggle("active", currentSettings.autoStart);
+    await saveSettings(currentSettings);
+  });
+}
+
+function initSettingsPanel() {
+  const clockEl = document.getElementById("clock")!;
+  const settingsPanel = document.getElementById("settings-panel")!;
+  const closeSettings = document.getElementById("close-settings")!;
+
+  clockEl.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    const alarmPanel = document.getElementById("alarm-panel")!;
+    alarmPanel.classList.add("hidden");
+    settingsPanel.classList.remove("hidden");
+    isAlarmPanelOpen = false;
+  });
+
+  closeSettings.addEventListener("click", () => {
+    settingsPanel.classList.add("hidden");
+  });
+}
+
 function init() {
   setupDragging();
   initClock();
   initAlarmPanel();
+  initSettingsPanel();
+  initSettings();
   initAlarmTrigger();
   console.log("悬浮时钟已启动");
 }

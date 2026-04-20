@@ -44,5 +44,11 @@ export function startClock(updateCallback: (timeStr: string) => void): () => voi
   tick();
   const interval = setInterval(tick, 1000);
 
-  return () => clearInterval(interval);
+  const onSettingsChange = () => tick();
+  window.addEventListener("settings-changed", onSettingsChange);
+
+  return () => {
+    clearInterval(interval);
+    window.removeEventListener("settings-changed", onSettingsChange);
+  };
 }
