@@ -7,11 +7,20 @@ import {
   deleteAlarm,
   toggleAlarm,
   formatAlarmTime,
+  type Alarm,
 } from "./alarm";
 import { getSettings, saveSettings, type ClockSettings } from "./settings";
 
-let isAlarmPanelOpen = false;
+let activePanel: "none" | "alarm" | "settings" = "none";
 let currentSettings: ClockSettings = { is24Hour: true, autoStart: false };
+
+function formatDate(date: Date): string {
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const weekDays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+  const weekDay = weekDays[date.getDay()];
+  return `${month}/${day} ${weekDay}`;
+}
 
 async function setupDragging() {
   const appWindow = getCurrentWindow();
@@ -19,7 +28,12 @@ async function setupDragging() {
 
   appEl.addEventListener("mousedown", async (e) => {
     const target = e.target as HTMLElement;
-    if (e.button === 0 && !target.closest("#alarm-panel") && !isAlarmPanelOpen && !target.closest("#settings-panel")) {
+    if (
+      e.button === 0 &&
+      !target.closest(".toolbar") &&
+      !target.closest(".panel") &&
+      !target.closest("button")
+    ) {
       await appWindow.startDragging();
     }
   });
@@ -27,52 +41,73 @@ async function setupDragging() {
 
 function initClock() {
   const clockEl = document.getElementById("clock")!;
+  const dateEl = document.getElementById("date")!;
+
   const stopClock = startClock((timeStr) => {
     clockEl.textContent = timeStr;
+    dateEl.textContent = formatDate(new Date());
   });
+
+  dateEl.textContent = formatDate(new Date());
   return stopClock;
+}
+
+async function updateAlarmDot() {
+  const dot = document.getElementById("alarm-dot")!;
+  const alarms = await getAlarms();
+  const hasEnabled = alarms.some((a) => a.enabled);
+  dot.classList.toggle("hidden", !hasEnabled);
 }
 
 async function renderAlarmList() {
   const listEl = document.getElementById("alarm-list")!;
   const alarms = await getAlarms();
 
-  const indicator = document.getElementById("alarm-indicator")!;
-  indicator.classList.toggle("active", alarms.some((a) => a.enabled));
-
   listEl.innerHTML = "";
-  alarms.forEach((alarm) => {
-    const item = document.createElement("div");
-    item.className = `alarm-item ${alarm.enabled ? "" : "disabled"}`;
-    item.innerHTML = `
-      <div class="alarm-item-info">
-        <span class="alarm-item-time">${formatAlarmTime(alarm)}</span>
-        <span class="alarm-item-label">${alarm.label || "闹钟"}</span>
-      </div>
-      <div class="alarm-item-actions">
-        <button class="toggle-btn ${alarm.enabled ? "active" : ""}" data-id="${alarm.id}"></button>
-        <button class="delete-btn" data-id="${alarm.id}">×</button>
-      </div>
-    `;
-    listEl.appendChild(item);
-  });
-
-  listEl.querySelectorAll(".toggle-btn").forEach((btn) => {
-    btn.addEventListener("click", async (e) => {
-      const id = (e.currentTarget as HTMLElement).dataset.id!;
-      await toggleAlarm(id);
-      await renderAlarmList();
+  if (alarms.length === 0) {
+    const empty = document.createElement("div");
+    empty.style.cssText =
+      "color:rgba(255,255,255,0.25);font-size:12px;text-align:center;padding:20px 0;";
+    empty.textContent = "暂无闹钟";
+    listEl.appendChild(empty);
+  } else {
+    alarms.forEach((alarm) => {
+      const item = document.createElement("div");
+      item.className = `alarm-item ${alarm.enabled ? "" : "disabled"}`;
+      item.innerHTML = `
+        <div class="alarm-item-info">
+          <span class="alarm-item-time">${formatAlarmTime(alarm)}</span>
+          <span class="alarm-item-label">${alarm.label || "闹钟"}</span>
+        </div>
+        <div class="alarm-item-actions">
+          <button class="toggle-btn ${alarm.enabled ? "active" : ""}" data-id="${alarm.id}"></button>
+          <button class="delete-btn" data-id="${alarm.id}">×</button>
+        </div>
+      `;
+      listEl.appendChild(item);
     });
-  });
 
-  listEl.querySelectorAll(".delete-btn").forEach((btn) => {
-    btn.addEventListener("click", async (e) => {
-      const id = (e.currentTarget as HTMLElement).dataset.id!;
-      await deleteAlarm(id);
-      await renderAlarmList();
-      updateAddButton();
+    listEl.querySelectorAll(".toggle-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id!;
+        await toggleAlarm(id);
+        await renderAlarmList();
+        await updateAlarmDot();
+      });
     });
-  });
+
+    listEl.querySelectorAll(".delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id!;
+        await deleteAlarm(id);
+        await renderAlarmList();
+        updateAddButton();
+        await updateAlarmDot();
+      });
+    });
+  }
+
+  await updateAlarmDot();
 }
 
 function updateAddButton() {
@@ -83,26 +118,46 @@ function updateAddButton() {
   });
 }
 
+function openPanel(panelName: "alarm" | "settings") {
+  const alarmPanel = document.getElementById("alarm-panel")!;
+  const settingsPanel = document.getElementById("settings-panel")!;
+
+  if (panelName === "alarm") {
+    settingsPanel.classList.add("hidden");
+    alarmPanel.classList.remove("hidden");
+    renderAlarmList();
+    updateAddButton();
+  } else {
+    alarmPanel.classList.add("hidden");
+    settingsPanel.classList.remove("hidden");
+  }
+
+  activePanel = panelName;
+}
+
+function closePanels() {
+  document.getElementById("alarm-panel")!.classList.add("hidden");
+  document.getElementById("settings-panel")!.classList.add("hidden");
+  activePanel = "none";
+}
+
 function initAlarmPanel() {
-  const clockEl = document.getElementById("clock")!;
-  const panel = document.getElementById("alarm-panel")!;
+  const btnAlarm = document.getElementById("btn-alarm")!;
   const closeBtn = document.getElementById("close-alarm")!;
   const addBtn = document.getElementById("add-alarm-btn")!;
   const form = document.getElementById("alarm-form")!;
   const cancelBtn = document.getElementById("cancel-alarm")!;
   const saveBtn = document.getElementById("save-alarm")!;
 
-  clockEl.addEventListener("dblclick", async () => {
-    isAlarmPanelOpen = true;
-    panel.classList.remove("hidden");
-    await renderAlarmList();
-    updateAddButton();
+  btnAlarm.addEventListener("click", () => {
+    if (activePanel === "alarm") {
+      closePanels();
+    } else {
+      openPanel("alarm");
+    }
   });
 
-  closeBtn.addEventListener("click", () => {
-    panel.classList.add("hidden");
-    isAlarmPanelOpen = false;
-  });
+  closeBtn.addEventListener("click", closePanels);
 
   addBtn.addEventListener("click", () => {
     form.classList.remove("hidden");
@@ -167,8 +222,8 @@ function showAlarmNotification(alarm: { hour: number; minute: number; label: str
   modal.className = "alarm-modal";
   modal.innerHTML = `
     <div class="alarm-modal-content">
-      <div class="alarm-modal-title">⏰ 闹钟响了</div>
-      <div class="alarm-modal-time">${formatAlarmTime(alarm as any)}</div>
+      <div class="alarm-modal-title">闹钟响了</div>
+      <div class="alarm-modal-time">${formatAlarmTime(alarm as Alarm)}</div>
       <div class="alarm-modal-label">${alarm.label || "闹钟"}</div>
       <button class="alarm-modal-close">知道了</button>
     </div>
@@ -199,10 +254,7 @@ async function initSettings() {
   currentSettings = await getSettings();
 
   const toggle24h = document.getElementById("toggle-24h")!;
-  const toggleAutostart = document.getElementById("toggle-autostart")!;
-
   toggle24h.classList.toggle("active", currentSettings.is24Hour);
-  toggleAutostart.classList.toggle("active", currentSettings.autoStart);
 
   toggle24h.addEventListener("click", async () => {
     currentSettings.is24Hour = !currentSettings.is24Hour;
@@ -210,30 +262,21 @@ async function initSettings() {
     await saveSettings(currentSettings);
     window.dispatchEvent(new Event("settings-changed"));
   });
-
-  toggleAutostart.addEventListener("click", async () => {
-    currentSettings.autoStart = !currentSettings.autoStart;
-    toggleAutostart.classList.toggle("active", currentSettings.autoStart);
-    await saveSettings(currentSettings);
-  });
 }
 
 function initSettingsPanel() {
-  const clockEl = document.getElementById("clock")!;
-  const settingsPanel = document.getElementById("settings-panel")!;
+  const btnSettings = document.getElementById("btn-settings")!;
   const closeSettings = document.getElementById("close-settings")!;
 
-  clockEl.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-    const alarmPanel = document.getElementById("alarm-panel")!;
-    alarmPanel.classList.add("hidden");
-    settingsPanel.classList.remove("hidden");
-    isAlarmPanelOpen = false;
+  btnSettings.addEventListener("click", () => {
+    if (activePanel === "settings") {
+      closePanels();
+    } else {
+      openPanel("settings");
+    }
   });
 
-  closeSettings.addEventListener("click", () => {
-    settingsPanel.classList.add("hidden");
-  });
+  closeSettings.addEventListener("click", closePanels);
 }
 
 function init() {
@@ -243,6 +286,7 @@ function init() {
   initSettingsPanel();
   initSettings();
   initAlarmTrigger();
+  updateAlarmDot();
   console.log("悬浮时钟已启动");
 }
 

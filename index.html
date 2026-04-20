@@ -8,39 +8,50 @@
   </head>
   <body>
     <div id="app">
-      <div id="clock" class="clock"></div>
-      <div id="alarm-indicator" class="alarm-indicator"></div>
+      <div id="alarm-dot" class="alarm-dot hidden"></div>
 
-      <div id="alarm-panel" class="alarm-panel hidden">
-        <div class="alarm-header">
-          <span>闹钟</span>
-          <button id="close-alarm" class="icon-btn">×</button>
-        </div>
-        <div id="alarm-list" class="alarm-list"></div>
-        <div id="alarm-form" class="alarm-form hidden">
-          <input type="time" id="alarm-time" required />
-          <input type="text" id="alarm-label" placeholder="标签" maxlength="10" />
-          <div class="form-actions">
-            <button id="cancel-alarm">取消</button>
-            <button id="save-alarm">保存</button>
-          </div>
-        </div>
-        <button id="add-alarm-btn" class="add-btn">+ 添加闹钟</button>
+      <div class="clock-section">
+        <div id="date" class="date"></div>
+        <div id="clock" class="clock"></div>
       </div>
 
-      <div id="settings-panel" class="settings-panel hidden">
-        <div class="settings-header">
-          <span>设置</span>
-          <button id="close-settings" class="icon-btn">×</button>
+      <div class="toolbar">
+        <button id="btn-alarm" class="toolbar-btn" title="闹钟">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.7 20 21"/></svg>
+        </button>
+        <button id="btn-settings" class="toolbar-btn" title="设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+
+      <div id="alarm-panel" class="panel hidden">
+        <div class="panel-header">
+          <span>闹钟</span>
+          <button id="close-alarm" class="panel-close">&times;</button>
         </div>
-        <div class="settings-list">
-          <div class="settings-item">
+        <div id="alarm-list" class="panel-body"></div>
+        <div id="alarm-form" class="panel-form hidden">
+          <div class="form-row">
+            <input type="time" id="alarm-time" required />
+            <input type="text" id="alarm-label" placeholder="标签" maxlength="10" />
+          </div>
+          <div class="form-actions">
+            <button id="cancel-alarm">取消</button>
+            <button id="save-alarm" class="primary">保存</button>
+          </div>
+        </div>
+        <button id="add-alarm-btn" class="panel-footer-btn">+ 添加闹钟</button>
+      </div>
+
+      <div id="settings-panel" class="panel hidden">
+        <div class="panel-header">
+          <span>设置</span>
+          <button id="close-settings" class="panel-close">&times;</button>
+        </div>
+        <div class="panel-body">
+          <div class="setting-row">
             <span>24小时制</span>
             <button id="toggle-24h" class="toggle-btn active"></button>
-          </div>
-          <div class="settings-item">
-            <span>开机自启</span>
-            <button id="toggle-autostart" class="toggle-btn"></button>
           </div>
         </div>
       </div>
