@@ -1,5 +1,7 @@
 use chrono::Timelike;
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
+use tauri::{AppHandle, Emitter, Manager};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Alarm {
@@ -30,6 +32,39 @@ impl Alarm {
             && now.minute() as u8 == self.minute
             && now.second() == 0
     }
+}
+
+pub struct AlarmState {
+    pub alarms: Arc<Mutex<Vec<Alarm>>>,
+}
+
+pub fn start_alarm_scheduler(app: AppHandle) {
+    std::thread::spawn(move || {
+        let mut last_triggered_minute: Option<(u32, u32)> = None;
+
+        loop {
+            let now = chrono::Local::now();
+            let current_minute = (now.hour(), now.minute());
+
+            if now.second() == 0 && last_triggered_minute != Some(current_minute) {
+                if let Some(state) = app.try_state::<AlarmState>() {
+                    let alarms = state.alarms.lock().unwrap();
+
+                    for alarm in alarms.iter() {
+                        if alarm.enabled
+                            && alarm.hour as u32 == now.hour()
+                            && alarm.minute as u32 == now.minute()
+                        {
+                            let _ = app.emit("alarm-triggered", alarm.clone());
+                        }
+                    }
+                }
+                last_triggered_minute = Some(current_minute);
+            }
+
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        }
+    });
 }
 
 #[cfg(test)]

@@ -261,3 +261,73 @@ body {
   opacity: 0.3;
   cursor: not-allowed;
 }
+
+.alarm-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.alarm-modal-content {
+  background: rgba(30, 30, 30, 0.95);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  min-width: 200px;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.alarm-modal-title {
+  font-size: 18px;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.alarm-modal-time {
+  font-size: 42px;
+  color: #ff4757;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+
+.alarm-modal-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 20px;
+}
+
+.alarm-modal-close {
+  background: #ff4757;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 32px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.alarm-modal-close:hover {
+  background: #ff3344;
+}

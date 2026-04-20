@@ -1,6 +1,6 @@
 use serde_json::Value;
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, Manager, State, Wry};
+use tauri::{AppHandle, State, Wry};
 use tauri_plugin_store::Store;
 
 const ALARMS_KEY: &str = "alarms";
@@ -27,11 +27,17 @@ pub fn get_alarms(state: State<StoreState>) -> Result<Vec<crate::alarm::Alarm>, 
 pub fn save_alarms(
     alarms: Vec<crate::alarm::Alarm>,
     state: State<StoreState>,
+    alarm_state: State<crate::alarm::AlarmState>,
 ) -> Result<(), String> {
     let store = state.0.lock().map_err(|e| e.to_string())?;
-    let value = serde_json::to_value(alarms).map_err(|e| e.to_string())?;
+    let value = serde_json::to_value(&alarms).map_err(|e| e.to_string())?;
     store.set(ALARMS_KEY, value);
     store.save().map_err(|e| e.to_string())?;
+    drop(store);
+
+    let mut mem_alarms = alarm_state.alarms.lock().map_err(|e| e.to_string())?;
+    *mem_alarms = alarms;
+
     Ok(())
 }
 

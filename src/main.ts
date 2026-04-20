@@ -1,4 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
 import { startClock } from "./clock";
 import {
   getAlarms,
@@ -132,10 +133,71 @@ function initAlarmPanel() {
   });
 }
 
+function playAlarmSound() {
+  try {
+    const audioCtx = new AudioContext();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime + 0.2);
+
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.5);
+
+    return { stop: () => audioCtx.close() };
+  } catch {
+    return { stop: () => {} };
+  }
+}
+
+function showAlarmNotification(alarm: { hour: number; minute: number; label: string }) {
+  const sound = playAlarmSound();
+
+  const modal = document.createElement("div");
+  modal.className = "alarm-modal";
+  modal.innerHTML = `
+    <div class="alarm-modal-content">
+      <div class="alarm-modal-title">⏰ 闹钟响了</div>
+      <div class="alarm-modal-time">${formatAlarmTime(alarm as any)}</div>
+      <div class="alarm-modal-label">${alarm.label || "闹钟"}</div>
+      <button class="alarm-modal-close">知道了</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  modal.querySelector(".alarm-modal-close")!.addEventListener("click", () => {
+    modal.remove();
+    sound.stop();
+  });
+
+  setTimeout(() => {
+    if (document.body.contains(modal)) {
+      modal.remove();
+      sound.stop();
+    }
+  }, 5000);
+}
+
+function initAlarmTrigger() {
+  listen("alarm-triggered", (event) => {
+    const alarm = event.payload as { hour: number; minute: number; label: string };
+    showAlarmNotification(alarm);
+  });
+}
+
 function init() {
   setupDragging();
   initClock();
   initAlarmPanel();
+  initAlarmTrigger();
   console.log("悬浮时钟已启动");
 }
 
