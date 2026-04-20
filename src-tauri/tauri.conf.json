@@ -17,12 +17,18 @@
         "title": "悬浮时钟",
         "width": 180,
         "height": 120,
+        "minWidth": 180,
+        "minHeight": 120,
+        "maxWidth": 180,
+        "maxHeight": 120,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
         "resizable": false,
         "skipTaskbar": true,
-        "center": true
+        "center": true,
+        "focus": false,
+        "visible": true
       }
     ],
     "security": {

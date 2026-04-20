@@ -3,6 +3,7 @@ name = "floating-clock"
 version = "1.0.0"
 edition = "2021"
 rust-version = "1.75"
+build = "build.rs"
 
 [lib]
 name = "floating_clock_lib"
@@ -11,6 +12,9 @@ crate-type = ["lib", "cdylib", "staticlib"]
 [[bin]]
 name = "floating-clock"
 path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
