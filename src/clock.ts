@@ -3,17 +3,19 @@ const SETTINGS_KEY = "clock-settings";
 export function formatTime(date: Date, is24Hour: boolean): string {
   const hours = date.getHours();
   const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
   const minsStr = minutes.toString().padStart(2, "0");
+  const secsStr = seconds.toString().padStart(2, "0");
 
   if (is24Hour) {
     const hrsStr = hours.toString().padStart(2, "0");
-    return `${hrsStr}:${minsStr}`;
+    return `${hrsStr}:${minsStr}:${secsStr}`;
   }
 
   const period = hours >= 12 ? "PM" : "AM";
   const hrs12 = hours % 12 || 12;
   const hrsStr = hrs12.toString().padStart(2, "0");
-  return `${hrsStr}:${minsStr} ${period}`;
+  return `${hrsStr}:${minsStr}:${secsStr} ${period}`;
 }
 
 export function is24HourFormat(): boolean {
