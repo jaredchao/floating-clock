@@ -1,4 +1,5 @@
 mod window;
+mod tray;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -6,6 +7,7 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .setup(|app| {
             let _window = window::setup_window(app.handle());
+            tray::setup_tray(app.handle())?;
             Ok(())
         })
         .run(tauri::generate_context!())
